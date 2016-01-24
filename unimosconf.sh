@@ -139,8 +139,8 @@ fi
 echo "A detectar placas wireless..."
 #TODO: This should detect *all* radios!
 #uci set wireless.radio0.disabled=0
-uci set wireless.wifi0.disabled=0
-uci commit wireless
+#uci set wireless.wifi0.disabled=0
+#uci commit wireless
 wifi
 
 
@@ -337,6 +337,7 @@ while [ $NUMBER_11G -gt 0 ]; do
   uci set network.mesh.netmask=255.0.0.0
   uci set network.mesh.ipaddr=$CURR_IP
 
+  uci set wireless.@wifi-device[0].disabled=0
   uci set wireless.@wifi-iface[0].network=mesh
   uci set wireless.@wifi-iface[0].mode=adhoc
   uci set wireless.@wifi-iface[0].ssid=get_mesh_ssid()
