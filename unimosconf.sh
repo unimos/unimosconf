@@ -69,27 +69,33 @@ get_ifaces() {
 get_mesh_ssid() {
   RESULT=""
   echo "x$1" | grep -qi "xourem" || echo "x$1" | grep -qi "xourém" && RESULT="aurenmesh."
-  if [ -z "$RESULT" ] ; then
+  if [ -z "${RESULT}" ] ; then
     echo "x$1" | grep -qi "xervedosa" && RESULT="ervedosa."
   fi
-  if [ -z "$RESULT" ] ; then
+  if [ -z "${RESULT}" ] ; then
     echo "x$1" | grep -qi "xnazare" || echo "x$1" | grep -qi "nazaré" && RESULT=""
   fi
+  if [ -z "${RESULT}" ] ; then
+    echo "x$1" | grep -qi "xlisboa" && RESULT="lisboa."
+  fi
 
-  echo $RESULT"unimos.net"
+  echo ${RESULT}"unimos.net"
 }
 
 get_5ghz_ssid() {
   RESULT=""
   echo "x$1" | grep -qi "xourem" || echo "x$1" | grep -qi "xourém" && RESULT="AurenMesh-Castelos"
-  if [ -z "$RESULT" ] ; then
+  if [ -z "${RESULT}" ] ; then
     echo "x$1" | grep -qi "xervedosa" && RESULT="Ervedosa - Unimos 5Bone"
   fi
-  if [ -z "$RESULT" ] ; then
+  if [ -z "${RESULT}" ] ; then
     echo "x$1" | grep -qi "xnazare" || echo "x$1" | grep -qi "nazaré" && RESULT="Nazaré - Unimos 5Bone"
   fi
+  if [ -z "${RESULT}" ] ; then
+    echo "x$1" | grep -qi "xlisboa" && RESULT="Lisboa - Unimos 5Bone"
+  fi
 
-  echo $RESULT
+  echo ${RESULT}
 }
 
 echo "Script para configuração inicial de routers Unimos"
@@ -437,7 +443,7 @@ if [ $? -eq 0 ]; then
   passwd
 
   /etc/init.d/firewall disable
-  cat <<EOF > /etc/init.d/$COMMUNITYmesh
+  cat <<EOF > /etc/init.d/${COMMUNITY}mesh
 #!/bin/sh /etc/rc.common
 
 START=45
@@ -457,8 +463,8 @@ stop() {
         iptables -t nat -F
 }
 EOF
-  chmod +x /etc/init.d/$COMMUNITYmesh
-  /etc/init.d/$COMMUNITYmesh enable
+  chmod +x /etc/init.d/${COMMUNITY}mesh
+  /etc/init.d/${COMMUNITY}mesh enable
   /etc/init.d/olsrd enable
 
 
