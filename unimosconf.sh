@@ -53,7 +53,7 @@ get_ifaces() {
   if [ -n "$2" ]; then
     shift
     FILTER_EXPRESSION=$(echo "$RESULT" | sed 's/ /|/g')
-    RESULT=$(echo "$RESULT" | grep -vxE "($FILTER_EXPRESSION)")
+    RESULT=$(echo "$RESULT" | grep -vxE "(${FILTER_EXPRESSION})")
   fi
   RESULT=$(echo "$RESULT" | xargs | sed 's/ /\//g')
   echo $RESULT
@@ -129,7 +129,7 @@ IFACE_NET=
 bool_answer "Partilhar o acesso à Internet deste equipamento?"
 if [ $? -eq 0 ]; then
   NET_IFACES=$(get_ifaces eth)
-  echo "Interface que dá acesso à Internet: [$NET_IFACES] "
+  echo "Interface que dá acesso à Internet: [${NET_IFACES}] "
   read IFACE_NET
   #TODO: validate IFACE_NET
   echo "Não esquecer: este interface deve ter um IP estático, a configurar no modem/gateway."
@@ -152,12 +152,12 @@ if [ $? -eq 0 ] ; then
   WLAN_IFACES=$(get_ifaces 'wl|ath')
   while [ $? -eq 0 ] ; do
 
-    if [ -z "$WLAN_IFACES" ]; then
+    if [ -z "${WLAN_IFACES}" ]; then
       echo "Nenhum interface possível detectado."
       break
 
     else
-      echo "Interfaces possíveis: [$WLAN_IFACES]"
+      echo "Interfaces possíveis: [${WLAN_IFACES}]"
       echo -n "Interface a configurar: "
       read CURR_IFACE
 
@@ -169,20 +169,20 @@ if [ $? -eq 0 ] ; then
         echo -n "Início da gama de IPs atribuída: (forma: 1.2.3.4) "
         read CURR_STARTADDR
 
-        CURR_IP=$(echo $CURR_STARTADDR | awk -F"." '{print $1"."$2"."$3"."$4+1}')
-        IFACES_11G="$IFACES_11G $CURR_IFACE $CURR_STARTADDR $CURR_IP"
+        CURR_IP=$(echo ${CURR_STARTADDR} | awk -F"." '{print $1"."$2"."$3"."$4+1}')
+        IFACES_11G="${IFACES_11G} ${CURR_IFACE} ${CURR_STARTADDR} ${CURR_IP}"
       else
         bool_answer "Interface 5GHz?"
         if [ $? -eq 0 ] ; then
           echo -n "IP para backbone deste nó: (forma: 1.2.3.4) "
           read CURR_IP
 
-          IFACES_11A="$IFACES_11A $CURR_IFACE $CURR_IP"
+          IFACES_11A="${IFACES_11A} ${CURR_IFACE} ${CURR_IP}"
         fi
       fi
 
       #remove CURR_IFACE from WLAN_IFACES
-      WLAN_IFACES=$(echo "$WLAN_IFACES" | sed "s/$CURR_IFACE//g" | sed 's/\/\//\//g' )
+      WLAN_IFACES=$(echo "${WLAN_IFACES}" | sed "s/${CURR_IFACE}//g" | sed 's/\/\//\//g' )
       bool_answer "Mais?"
     fi
   done
@@ -194,12 +194,12 @@ fi
 #if [ $? -eq 0 ] ; then
 #
 #  WLAN_IFACES=$(get_ifaces wl)
-#  echo "Interfaces 802.11a possíveis: [$WLAN_IFACES]"
+#  echo "Interfaces 802.11a possíveis: [${WLAN_IFACES}]"
 #  while [ $? -eq 0 ] ; do
 #    echo -n "Interface a configurar: "
 #    read CURR_IFACE
 #    #TODO: validate CURR_IFACE belongs to WLAN_IFACES
-#    IFACES_11A="$IFACES_11G $CURR_IFACE $CURR_IFACE_IP"
+#    IFACES_11A="${IFACES_11G} ${CURR_IFACE} ${CURR_IFACE_IP}"
 #    bool_answer "Mais?"
 #  done
 #fi
@@ -213,14 +213,14 @@ read
 
 
 # At this stage, all of these vars must be defined:
-if [ -z "$IFACE_NET" -a -z "$IFACES_11G" -a -z "$IFACES_11A" ]; then
+if [ -z "${IFACE_NET}" -a -z "${IFACES_11G}" -a -z "${IFACES_11A}" ]; then
   echo 'Nenhum interface para configurar.'
   exit 1;
 fi
 
 
 ### Configuration done. Applying settings.
-uci set system.@system[0].hostname=$ROUTER_NAME
+uci set system.@system[0].hostname=${ROUTER_NAME}
 uci set system.@system[0].zonename='Europe/Lisbon'
 uci set system.@system[0].timezone='WET0WEST,M3.5.0/1,M10.5.0'
 uci delete system.ntp.server
@@ -230,7 +230,7 @@ uci add_list system.ntp.server=ntp04.oal.ul.pt
 
 
 opkg update
-opkg install olsrd olsrd-mod-nameservice olsrd-mod-txtinfo olsrd-mod-arprefresh olsrd-mod-dyn-gw #$([ -n "$IFACE_NET" ] && echo olsrd-mod-dyn-gw)
+opkg install olsrd olsrd-mod-nameservice olsrd-mod-txtinfo olsrd-mod-arprefresh olsrd-mod-dyn-gw #$([ -n "${IFACE_NET}" ] && echo olsrd-mod-dyn-gw)
 
 echo "A limpar definições de plugins OLSR..."
 while [ $? -eq 0 ] ; do
@@ -291,9 +291,9 @@ uci set olsrd.@IpcConnect[0].MaxConnections=0
 
 #if [ ! -z $IFACE_NET ]; then
   #uci set network.lan=interface
-  #uci set network.lan.ifname=$IFACE_NET
+  #uci set network.lan.ifname=${IFACE_NET}
   #uci set network.lan.proto=dhcp
-  #uci set network.lan.ipaddr=$NET_IPADDR
+  #uci set network.lan.ipaddr=${NET_IPADDR}
   #uci set network.lan.netmask=255.255.255.0
 
   uci add olsrd LoadPlugin
