@@ -340,7 +340,7 @@ while [ $NUMBER_11G -gt 0 ]; do
   uci set wireless.@wifi-device[0].disabled=0
   uci set wireless.@wifi-iface[0].network=mesh
   uci set wireless.@wifi-iface[0].mode=adhoc
-  uci set wireless.@wifi-iface[0].ssid=$(get_mesh_ssid)
+  uci set wireless.@wifi-iface[0].ssid=$(get_mesh_ssid ${COMMUNITY})
   uci set wireless.@wifi-iface[0].bssid="02:CA:FF:EE:BA:BE"
   uci set wireless.@wifi-iface[0].encryption=none
 
