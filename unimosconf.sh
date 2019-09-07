@@ -31,7 +31,7 @@
 bool_answer() {
   echo -n "$1 [s/N] "
   read VAR
-  case "x$VAR" in
+  case "x${VAR}" in
     "xs"|"xsim"|"xS"|"xSIM"|"xy"|"xY"|"xyes"|"xYES")
       return 0;
       ;;
@@ -52,11 +52,11 @@ get_ifaces() {
   RESULT=$(/sbin/ifconfig -a | grep Ethernet | cut -d" " -f 1|grep -E "($1)")
   if [ -n "$2" ]; then
     shift
-    FILTER_EXPRESSION=$(echo "$RESULT" | sed 's/ /|/g')
-    RESULT=$(echo "$RESULT" | grep -vxE "($FILTER_EXPRESSION)")
+    FILTER_EXPRESSION=$(echo "${RESULT}" | sed 's/ /|/g')
+    RESULT=$(echo "${RESULT}" | grep -vxE "(${FILTER_EXPRESSION})")
   fi
-  RESULT=$(echo "$RESULT" | xargs | sed 's/ /\//g')
-  echo $RESULT
+  RESULT=$(echo "${RESULT}" | xargs | sed 's/ /\//g')
+  echo ${RESULT}
 }
 
 
@@ -129,7 +129,7 @@ IFACE_NET=
 bool_answer "Partilhar o acesso à Internet deste equipamento?"
 if [ $? -eq 0 ]; then
   NET_IFACES=$(get_ifaces eth)
-  echo "Interface que dá acesso à Internet: [$NET_IFACES] "
+  echo "Interface que dá acesso à Internet: [${NET_IFACES}] "
   read IFACE_NET
   #TODO: validate IFACE_NET
   echo "Não esquecer: este interface deve ter um IP estático, a configurar no modem/gateway."
@@ -152,12 +152,12 @@ if [ $? -eq 0 ] ; then
   WLAN_IFACES=$(get_ifaces 'wl|ath')
   while [ $? -eq 0 ] ; do
 
-    if [ -z "$WLAN_IFACES" ]; then
+    if [ -z "${WLAN_IFACES}" ]; then
       echo "Nenhum interface possível detectado."
       break
 
     else
-      echo "Interfaces possíveis: [$WLAN_IFACES]"
+      echo "Interfaces possíveis: [${WLAN_IFACES}]"
       echo -n "Interface a configurar: "
       read CURR_IFACE
 
@@ -169,20 +169,20 @@ if [ $? -eq 0 ] ; then
         echo -n "Início da gama de IPs atribuída: (forma: 1.2.3.4) "
         read CURR_STARTADDR
 
-        CURR_IP=$(echo $CURR_STARTADDR | awk -F"." '{print $1"."$2"."$3"."$4+1}')
-        IFACES_11G="$IFACES_11G $CURR_IFACE $CURR_STARTADDR $CURR_IP"
+        CURR_IP=$(echo ${CURR_STARTADDR} | awk -F"." '{print $1"."$2"."$3"."$4+1}')
+        IFACES_11G="${IFACES_11G} ${CURR_IFACE} ${CURR_STARTADDR} ${CURR_IP}"
       else
         bool_answer "Interface 5GHz?"
         if [ $? -eq 0 ] ; then
           echo -n "IP para backbone deste nó: (forma: 1.2.3.4) "
           read CURR_IP
 
-          IFACES_11A="$IFACES_11A $CURR_IFACE $CURR_IP"
+          IFACES_11A="${IFACES_11A} ${CURR_IFACE} ${CURR_IP}"
         fi
       fi
 
       #remove CURR_IFACE from WLAN_IFACES
-      WLAN_IFACES=$(echo "$WLAN_IFACES" | sed "s/$CURR_IFACE//g" | sed 's/\/\//\//g' )
+      WLAN_IFACES=$(echo "${WLAN_IFACES}" | sed "s/${CURR_IFACE}//g" | sed 's/\/\//\//g' )
       bool_answer "Mais?"
     fi
   done
@@ -194,12 +194,12 @@ fi
 #if [ $? -eq 0 ] ; then
 #
 #  WLAN_IFACES=$(get_ifaces wl)
-#  echo "Interfaces 802.11a possíveis: [$WLAN_IFACES]"
+#  echo "Interfaces 802.11a possíveis: [${WLAN_IFACES}]"
 #  while [ $? -eq 0 ] ; do
 #    echo -n "Interface a configurar: "
 #    read CURR_IFACE
 #    #TODO: validate CURR_IFACE belongs to WLAN_IFACES
-#    IFACES_11A="$IFACES_11G $CURR_IFACE $CURR_IFACE_IP"
+#    IFACES_11A="${IFACES_11G} ${CURR_IFACE} ${CURR_IFACE_IP}"
 #    bool_answer "Mais?"
 #  done
 #fi
@@ -213,14 +213,14 @@ read
 
 
 # At this stage, all of these vars must be defined:
-if [ -z "$IFACE_NET" -a -z "$IFACES_11G" -a -z "$IFACES_11A" ]; then
+if [ -z "${IFACE_NET}" -a -z "${IFACES_11G}" -a -z "${IFACES_11A}" ]; then
   echo 'Nenhum interface para configurar.'
   exit 1;
 fi
 
 
 ### Configuration done. Applying settings.
-uci set system.@system[0].hostname=$ROUTER_NAME
+uci set system.@system[0].hostname=${ROUTER_NAME}
 uci set system.@system[0].zonename='Europe/Lisbon'
 uci set system.@system[0].timezone='WET0WEST,M3.5.0/1,M10.5.0'
 uci delete system.ntp.server
@@ -230,7 +230,7 @@ uci add_list system.ntp.server=ntp04.oal.ul.pt
 
 
 opkg update
-opkg install olsrd olsrd-mod-nameservice olsrd-mod-txtinfo olsrd-mod-arprefresh olsrd-mod-dyn-gw #$([ -n "$IFACE_NET" ] && echo olsrd-mod-dyn-gw)
+opkg install olsrd olsrd-mod-nameservice olsrd-mod-txtinfo olsrd-mod-arprefresh olsrd-mod-dyn-gw #$([ -n "${IFACE_NET}" ] && echo olsrd-mod-dyn-gw)
 
 echo "A limpar definições de plugins OLSR..."
 while [ $? -eq 0 ] ; do
@@ -270,12 +270,12 @@ uci add olsrd LoadPlugin
 uci set olsrd.@LoadPlugin[-1].library=olsrd_nameservice.so.0.3
 uci set olsrd.@LoadPlugin[-1].hosts_file=/etc/hosts
 uci set olsrd.@LoadPlugin[-1].resolv_file=/etc/resolv.conf.olsr
-uci add_list olsrd.@LoadPlugin[-1].name=$ROUTER_NAME
+uci add_list olsrd.@LoadPlugin[-1].name=${ROUTER_NAME}
 uci set olsrd.@LoadPlugin[-1].sighup_pid_file=/var/run/dnsmasq.pid
 uci set olsrd.@LoadPlugin[-1].ignore=0
 uci set olsrd.@LoadPlugin[-1].latlon_file=/var/run/latlon.js
-uci set olsrd.@LoadPlugin[-1].lat=$LATITUDE
-uci set olsrd.@LoadPlugin[-1].lon=$LONGITUDE
+uci set olsrd.@LoadPlugin[-1].lat=${LATITUDE}
+uci set olsrd.@LoadPlugin[-1].lon=${LONGITUDE}
 
 uci add olsrd LoadPlugin
 uci set olsrd.@LoadPlugin[-1].library=olsrd_txtinfo.so.0.1
@@ -291,9 +291,9 @@ uci set olsrd.@IpcConnect[0].MaxConnections=0
 
 #if [ ! -z $IFACE_NET ]; then
   #uci set network.lan=interface
-  #uci set network.lan.ifname=$IFACE_NET
+  #uci set network.lan.ifname=${IFACE_NET}
   #uci set network.lan.proto=dhcp
-  #uci set network.lan.ipaddr=$NET_IPADDR
+  #uci set network.lan.ipaddr=${NET_IPADDR}
   #uci set network.lan.netmask=255.255.255.0
 
   uci add olsrd LoadPlugin
@@ -318,24 +318,24 @@ uci add_list dhcp.@dnsmasq[0].server='8.8.8.8'
 uci add_list dhcp.@dnsmasq[0].server='8.8.4.4'
 
 
-NUMBER_11G=$(echo $IFACES_11G | awk '{print NF}')
+NUMBER_11G=$(echo ${IFACES_11G} | awk '{print NF}')
 
-while [ $NUMBER_11G -gt 0 ]; do
-  CURR_IFACE=$(echo $IFACES_11G | awk '{print $1}')
-  CURR_STARTADDR=$(echo $IFACES_11G | awk '{print $2}')
-  CURR_IP=$(echo $IFACES_11G | awk '{print $3}');
+while [ ${NUMBER_11G} -gt 0 ]; do
+  CURR_IFACE=$(echo ${IFACES_11G} | awk '{print $1}')
+  CURR_STARTADDR=$(echo ${IFACES_11G} | awk '{print $2}')
+  CURR_IP=$(echo ${IFACES_11G} | awk '{print $3}');
 
   echo
-  echo "A configurar interface para mesh 2GHz: $CURR_IFACE"
-  echo "IP: $CURR_IP"
-  echo "Início da sub-rede: $CURR_STARTADDR"
+  echo "A configurar interface para mesh 2GHz: ${CURR_IFACE}"
+  echo "IP: ${CURR_IP}"
+  echo "Início da sub-rede: ${CURR_STARTADDR}"
   echo "Netmask: 255.0.0.0"
 
   uci set network.mesh=interface
-  uci set network.mesh.ifname=$CURR_IFACE
+  uci set network.mesh.ifname=${CURR_IFACE}
   uci set network.mesh.proto=static
   uci set network.mesh.netmask=255.0.0.0
-  uci set network.mesh.ipaddr=$CURR_IP
+  uci set network.mesh.ipaddr=${CURR_IP}
 
   uci set wireless.@wifi-device[0].disabled=0
   uci set wireless.@wifi-iface[0].network=mesh
@@ -345,7 +345,7 @@ while [ $NUMBER_11G -gt 0 ]; do
   uci set wireless.@wifi-iface[0].encryption=none
 
   uci add olsrd Hna4
-  uci set olsrd.@Hna4[-1].netaddr=$CURR_STARTADDR
+  uci set olsrd.@Hna4[-1].netaddr=${CURR_STARTADDR}
   uci set olsrd.@Hna4[-1].netmask=255.255.255.224
 
   uci add olsrd Interface
@@ -360,41 +360,41 @@ while [ $NUMBER_11G -gt 0 ]; do
   uci set olsrd.@Interface[-1].HnaInterval=25.0
   uci set olsrd.@Interface[-1].HnaValidityTime=500.0
 
-  CURR_DHCPSTART=$(echo $CURR_STARTADDR | awk -F"." '{print $4+2}')
+  CURR_DHCPSTART=$(echo ${CURR_STARTADDR} | awk -F"." '{print $4+2}')
   uci set dhcp.mesh=dhcp
   uci set dhcp.@dhcp[-1].interface=mesh
-  uci set dhcp.@dhcp[-1].start=$CURR_DHCPSTART
+  uci set dhcp.@dhcp[-1].start=${CURR_DHCPSTART}
   uci set dhcp.@dhcp[-1].limit=28
   uci set dhcp.@dhcp[-1].netmask=255.255.255.224
   uci set dhcp.@dhcp[-1].leasetime=6h
   uci set dhcp.@dhcp[-1].force=1
 
-  ADD_TO_IPTABLES="$ADD_TO_IPTABLES
+  ADD_TO_IPTABLES="${ADD_TO_IPTABLES}
         # Trafego Unimos->LAN, nao relacionado com pedidos iniciados antes, e' perdido
         iptables -A FORWARD -i $CURR_IFACE -d 192.168.0.0/16 -j DROP"
 
-  IFACES_11G=$(echo $IFACES_11G | echo $(read one two three rest && echo $rest))
-  NUMBER_11G=$(echo $IFACES_11G | awk '{print NF}')
+  IFACES_11G=$(echo ${IFACES_11G} | echo $(read one two three rest && echo ${rest}))
+  NUMBER_11G=$(echo ${IFACES_11G} | awk '{print NF}')
 done
 
 
 
-NUMBER_11A=$(echo $IFACES_11A | awk '{print NF}')
+NUMBER_11A=$(echo ${IFACES_11A} | awk '{print NF}')
 
-while [ $NUMBER_11A -gt 0 ]; do
-  CURR_IFACE=$(echo $IFACES_11A | awk '{print $1}')
-  CURR_IP=$(echo $IFACES_11A | awk '{print $2}' )
+while [ ${NUMBER_11A} -gt 0 ]; do
+  CURR_IFACE=$(echo ${IFACES_11A} | awk '{print $1}')
+  CURR_IP=$(echo ${IFACES_11A} | awk '{print $2}' )
 
   echo
-  echo "A configurar interface para backbone 5GHz: $CURR_IFACE"
-  echo "IP: $CURR_IP"
+  echo "A configurar interface para backbone 5GHz: ${CURR_IFACE}"
+  echo "IP: ${CURR_IP}"
   echo "Netmask: 255.255.255.0"
 
   uci set network.backbone=interface
-  uci set network.backbone.ifname=$CURR_IFACE
+  uci set network.backbone.ifname=${CURR_IFACE}
   uci set network.backbone.proto=static
   uci set network.backbone.netmask=255.255.255.0
-  uci set network.backbone.ipaddr=$CURR_IP
+  uci set network.backbone.ipaddr=${CURR_IP}
 
   uci set wireless.@wifi-iface[0].network=backbone
   uci set wireless.@wifi-iface[0].mode=adhoc
@@ -415,19 +415,19 @@ while [ $NUMBER_11A -gt 0 ]; do
   uci set olsrd.@Interface[-1].HnaValidityTime=500.0
 
 
-  ADD_TO_IPTABLES="$ADD_TO_IPTABLES
+  ADD_TO_IPTABLES="${ADD_TO_IPTABLES}
         # Trafego Unimos->LAN, nao relacionado com pedidos iniciados antes, e' perdido
         iptables -A FORWARD -i $CURR_IFACE -d 192.168.0.0/16 -j DROP"
 
-  IFACES_11A=$(echo $IFACES_11A | echo $(read one two rest && echo $rest))
-  NUMBER_11A=$(echo $IFACES_11A | awk '{print NF}')
+  IFACES_11A=$(echo ${IFACES_11A} | echo $(read one two rest && echo ${rest}))
+  NUMBER_11A=$(echo ${IFACES_11A} | awk '{print NF}')
 done
 
 
-if [ -n "$IFACE_NET" ] ; then
-  ADD_TO_IPTABLES="$ADD_TO_IPTABLES
+if [ -n "${IFACE_NET}" ] ; then
+  ADD_TO_IPTABLES="${ADD_TO_IPTABLES}
       # Tra'fego Unimos->Internet e' mascarado
-      iptables -t nat -A POSTROUTING  -s 10.0.0.0/8 -o $IFACE_NET -j MASQUERADE"
+      iptables -t nat -A POSTROUTING  -s 10.0.0.0/8 -o ${IFACE_NET} -j MASQUERADE"
 fi
 
 
@@ -456,7 +456,7 @@ start() {
         # Tra'fego LAN->Unimos e' mascarado
         iptables -t nat -A POSTROUTING -s 192.168.0.0/16 -j MASQUERADE
 
-        $ADD_TO_IPTABLES
+        ${ADD_TO_IPTABLES}
 }
 
 stop() {
@@ -469,7 +469,7 @@ EOF
   /etc/init.d/olsrd enable
 
 
-  if [ ! -z $IFACE_NET ]; then
+  if [ ! -z ${IFACE_NET} ]; then
       echo
       echo "ATENÇÃO!!!!"
       echo "Este router partilha um acesso à Internet:"
