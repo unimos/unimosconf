@@ -166,10 +166,10 @@ if [ $? -eq 0 ] ; then
 
       bool_answer "Interface 2GHz?"
       if [ $? -eq 0 ] ; then
-        echo -n "Início da gama de IPs atribuída: (forma: 10.0.180.xxx/27) "
+        echo -n "Início da gama de IPs atribuída: (forma: 10.0.XXX.YYY/27) "
         read CURR_STARTADDR
 
-        CURR_IP=$(echo ${CURR_STARTADDR} | awk -F"." '{print $1"."$2"."$3"."$4+1}')
+        CURR_IP=$(echo ${CURR_STARTADDR} | awk -F"[./]" '{print $1"."$2"."$3"."$4+1}')
         IFACES_11G="${IFACES_11G} ${CURR_IFACE} ${CURR_STARTADDR} ${CURR_IP}"
       else
         bool_answer "Interface 5GHz?"
